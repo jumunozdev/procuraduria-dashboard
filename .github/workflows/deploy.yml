@@ -1,0 +1,45 @@
+name: Deploy a GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Cada 5 minutos (mínimo que permite GitHub; puede retrasarse en horas pico).
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Descargar datos en vivo del portal
+        run: node scripts/fetch_live.mjs public/data/live.json
+      - name: Build estático
+        run: npm run build
+        env:
+          VITE_STATIC_DATA: "1"
+          VITE_BASE: /${{ github.event.repository.name }}/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

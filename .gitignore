@@ -1,0 +1,6 @@
+node_modules
+dist
+.cache
+.venv
+*.log
+public/data/live.json
