@@ -86,7 +86,7 @@ export default function Encabezado(p: Props) {
               <span className="text-slate-200">
                 {p.cargando ? "Actualizando…" : `Última actualización: ${fmtHora(p.actualizadoEn)}`}
                 {MODO_ESTATICO && p.datosGeneradosEn && (
-                  <span className="text-slate-400" title="En GitHub Pages los datos los captura GitHub Actions cada ~5 minutos">
+                  <span className="text-slate-400" title="En GitHub Pages los datos se publican cada ~5 minutos desde un equipo en Colombia (el portal no responde a servidores extranjeros)">
                     {" "}· datos del portal capturados a las {fmtHora(new Date(p.datosGeneradosEn))}
                   </span>
                 )}

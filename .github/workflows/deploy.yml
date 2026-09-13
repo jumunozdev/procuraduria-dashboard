@@ -1,11 +1,12 @@
 name: Deploy a GitHub Pages
 
+# La página es estática. Los datos en vivo NO se capturan aquí: el CDN del
+# portal no entrega el API a los runners de GitHub (IPs extranjeras). Los
+# publica scripts/publicar_datos.sh (desde Colombia) en la rama `datos`, y la
+# página los lee vía raw.githubusercontent.com.
 on:
   push:
     branches: [main]
-  schedule:
-    # Cada 5 minutos (mínimo que permite GitHub; puede retrasarse en horas pico).
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -30,13 +31,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Descargar datos en vivo del portal
-        run: node scripts/fetch_live.mjs public/data/live.json
       - name: Build estático
         run: npm run build
         env:
           VITE_STATIC_DATA: "1"
           VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_LIVE_URL: https://raw.githubusercontent.com/${{ github.repository }}/datos/live.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -26,6 +26,28 @@ todas las convocatorias (generales y reservadas a personas con discapacidad) con
 El portal no envía cabeceras CORS, por eso las peticiones pasan por un proxy: Vite en desarrollo
 (`vite.config.ts`) y `server/index.js` (Express) en producción.
 
+## GitHub Pages (URL pública)
+
+La página vive en `https://jumunozdev.github.io/procuraduria-dashboard/` y se despliega con
+`.github/workflows/deploy.yml` en cada push a `main`.
+
+Como Pages es estático y el CDN del portal **no entrega el API a IPs extranjeras** (los runners de
+GitHub reciben el `index.html` del portal en vez del JSON), los datos en vivo los captura un equipo
+en Colombia con `scripts/publicar_datos.sh`, que ejecuta `scripts/fetch_live.mjs` y hace push de un
+único commit a la rama `datos`. La página lee
+`https://raw.githubusercontent.com/jumunozdev/procuraduria-dashboard/datos/live.json` en cada
+refresco y muestra la hora de captura.
+
+Automatizar cada 5 minutos en macOS (launchd):
+
+```bash
+cp scripts/com.jumunozdev.procuraduria-datos.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.jumunozdev.procuraduria-datos.plist
+```
+
+Detenerlo: `launchctl unload ~/Library/LaunchAgents/com.jumunozdev.procuraduria-datos.plist`.
+Registro de ejecuciones: `.cache/publicar_datos.log`.
+
 ## Uso
 
 ```bash

@@ -2,12 +2,15 @@ import type { ConcursoInfo, ConvocatoriaApi, Estadisticas } from "./types";
 
 // En dev, Vite reescribe /api -> /inscripciones/publico-c del portal.
 // En producción lo hace server/index.js.
-// En GitHub Pages (VITE_STATIC_DATA=1) no hay proxy: se lee data/live.json,
-// que GitHub Actions regenera cada ~5 minutos (scripts/fetch_live.mjs).
+// En GitHub Pages (VITE_STATIC_DATA=1) no hay proxy: se lee un live.json que
+// scripts/publicar_datos.sh regenera cada ~5 minutos en la rama `datos`
+// (VITE_LIVE_URL), con data/live.json local como respaldo.
 const BASE = "/api";
 const PAGE_SIZE = 100;
 export const MODO_ESTATICO = import.meta.env.VITE_STATIC_DATA === "1";
-const LIVE_URL = `${import.meta.env.BASE_URL}data/live.json`;
+const LIVE_URLS = [import.meta.env.VITE_LIVE_URL as string | undefined, `${import.meta.env.BASE_URL}data/live.json`].filter(
+  (u): u is string => !!u
+);
 
 export interface LiveJson {
   generadoEn: string;
@@ -17,9 +20,18 @@ export interface LiveJson {
   concurso: ConcursoInfo | null;
 }
 
-/** Snapshot estático generado por GitHub Actions (sin caché del navegador). */
-export function fetchLive(signal?: AbortSignal): Promise<LiveJson> {
-  return getJson<LiveJson>(`${LIVE_URL}?t=${Date.now()}`, signal);
+/** Snapshot estático publicado por scripts/publicar_datos.sh (sin caché del navegador). */
+export async function fetchLive(signal?: AbortSignal): Promise<LiveJson> {
+  let ultimoError: unknown = null;
+  for (const url of LIVE_URLS) {
+    try {
+      return await getJson<LiveJson>(`${url}?t=${Date.now()}`, signal);
+    } catch (e) {
+      ultimoError = e;
+      if ((e as Error).name === "AbortError") throw e;
+    }
+  }
+  throw ultimoError ?? new Error("No hay fuente de datos disponible");
 }
 
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
