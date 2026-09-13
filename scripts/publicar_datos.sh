@@ -7,7 +7,12 @@
 # Uso manual:   scripts/publicar_datos.sh
 # Automático:   launchd cada 5 min (ver scripts/com.jumunozdev.procuraduria-datos.plist)
 set -euo pipefail
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.volta/bin:$PATH"
+# launchd no carga el perfil del shell: localizar node aunque venga de nvm.
+if ! command -v node >/dev/null 2>&1; then
+  for d in "$HOME"/.nvm/versions/node/*/bin; do [ -x "$d/node" ] && export PATH="$d:$PATH"; done
+fi
+command -v node >/dev/null 2>&1 || { echo "node no encontrado en PATH=$PATH" >&2; exit 1; }
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REMOTE="$(git -C "$REPO_DIR" remote get-url origin)"
