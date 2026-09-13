@@ -9,8 +9,11 @@ const out = process.argv[2] || "public/data/live.json";
 
 async function getJson(url) {
   const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" } });
-  if (!r.ok) throw new Error(`HTTP ${r.status} ${url}`);
-  return r.json();
+  const text = await r.text();
+  if (!r.ok || !text.trim().startsWith("{") && !text.trim().startsWith("[")) {
+    throw new Error(`Respuesta no JSON (HTTP ${r.status}) de ${url}\ncontent-type=${r.headers.get("content-type")} server=${r.headers.get("server")} cf-ray=${r.headers.get("cf-ray")}\n${text.slice(0, 800)}`);
+  }
+  return JSON.parse(text);
 }
 
 const first = await getJson(`${API}/convocatorias?soloActivas=false&size=${SIZE}&page=0`);
